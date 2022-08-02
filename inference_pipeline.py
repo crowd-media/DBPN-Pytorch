@@ -16,7 +16,7 @@ from dbpn.dbpn_iterative import Net as DBPNITER
 from data import get_eval_set
 from functools import reduce
 
-from scipy.misc import imsave
+# from scipy.misc import imsave
 import scipy.io as sio
 import time
 import cv2
