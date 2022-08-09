@@ -49,6 +49,8 @@ def load_model(path, device = "cuda", model_type='DBPNLL', upscale_factor=8):
     #     model = DBPNITER(num_channels=3, base_filter=64,  feat = 256, num_stages=3, scale_factor=upscale_factor) ###D-DBPN
     # else:
     model = DBPN(num_channels=3, base_filter=64,  feat = 256, num_stages=7, scale_factor=upscale_factor) ###D-DBPN
+
+    gpus_list = range(1)
         
     if device == "cuda":
         model = torch.nn.DataParallel(model, device_ids=gpus_list)
