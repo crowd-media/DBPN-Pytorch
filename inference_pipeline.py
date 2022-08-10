@@ -40,7 +40,7 @@ def _load(checkpoint_path, device = "cuda"):
 
 
 
-def load_model(path, device = "cuda", model_type='DBPNLL', upscale_factor=8):
+def load_model(path, device = "cuda", model_type='DBPNLL', upscale_factor=8,residual_learning=False):
 
     print('===> Building model')
     # if model_type == 'DBPNLL':

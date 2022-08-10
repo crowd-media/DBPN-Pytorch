@@ -1,6 +1,6 @@
 from os.path import join
 from torchvision.transforms import Compose, ToTensor
-from dataset import DatasetFromFolderEval, DatasetFromFolder
+from dbpn.dataset import DatasetFromFolderEval, DatasetFromFolder
 
 def transform():
     return Compose([
