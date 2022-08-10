@@ -84,7 +84,6 @@ def load_model(path, device = "cuda", model_type='DBPNLL', upscale_factor=8):
     return model.eval()
 
 
-
 def create_data_loader(dataset_path, upscale_factor, test_batch_size, threads = 1):
     test_set = get_eval_set(dataset_path, upscale_factor)
     testing_data_loader = DataLoader(dataset=test_set, num_workers=threads, batch_size=test_batch_size, shuffle=False)
