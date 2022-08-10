@@ -51,9 +51,6 @@ def load_model(path, device = "cuda", model_type='DBPNLL', upscale_factor=8):
     model = DBPN(num_channels=3, base_filter=64,  feat = 256, num_stages=7, scale_factor=upscale_factor) ###D-DBPN
 
     gpus_list = range(1)
-        
-    if device == "cuda":
-        model = torch.nn.DataParallel(model, device_ids=gpus_list)
 
     print("Load checkpoint from: {}".format(path))
     checkpoint = _load(path, device)
@@ -61,15 +58,19 @@ def load_model(path, device = "cuda", model_type='DBPNLL', upscale_factor=8):
     # print(checkpoint.items())
     s = checkpoint
     # s = checkpoint["state_dict"]
-    new_s = {}
-    for k, v in s.items():
-        # print(k)
-        new_s[k.replace("module.", "")] = v
-    
-    model.load_state_dict(new_s)
+  
+        
+    if device == "cuda":
+        model = torch.nn.DataParallel(model, device_ids=gpus_list)
+        model.load_state_dict(s)
+    else:
+        new_s = {}
 
-    # print(model)
-
+        for k, v in s.items():
+            # print(k)
+            new_s[k.replace("module.", "")] = v  
+        
+        model.load_state_dict(new_s)
 
 
     # model.load_state_dict(torch.load(path, map_location=lambda storage, loc: storage))
@@ -81,7 +82,6 @@ def load_model(path, device = "cuda", model_type='DBPNLL', upscale_factor=8):
         model.to(device)
     
     return model.eval()
-
 
 
 
