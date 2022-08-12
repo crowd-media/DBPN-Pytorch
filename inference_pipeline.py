@@ -43,12 +43,14 @@ def _load(checkpoint_path, device = "cuda"):
 def load_model(path, device = "cuda", model_type='DBPNLL', upscale_factor=8,residual_learning=False):
 
     print('===> Building model')
-    # if model_type == 'DBPNLL':
-    #     model = DBPNLL(num_channels=3, base_filter=64,  feat = 256, num_stages=10, scale_factor=upscale_factor) ###D-DBPN
-    # elif model_type == 'DBPN-RES-MR64-3':
-    #     model = DBPNITER(num_channels=3, base_filter=64,  feat = 256, num_stages=3, scale_factor=upscale_factor) ###D-DBPN
-    # else:
-    model = DBPN(num_channels=3, base_filter=64,  feat = 256, num_stages=7, scale_factor=upscale_factor) ###D-DBPN
+    if model_type == 'DBPNLL':
+        model = DBPNLL(num_channels=3, base_filter=64,  feat = 256, num_stages=10, scale_factor=upscale_factor) ###D-DBPN
+    elif model_type == 'DBPN-RES-MR64-3':
+        model = DBPNITER(num_channels=3, base_filter=64,  feat = 256, num_stages=3, scale_factor=upscale_factor) ###D-DBPN
+    else:
+        model = DBPN(num_channels=3, base_filter=64,  feat = 256, num_stages=7, scale_factor=upscale_factor) ###D-DBPN
+        
+
 
     gpus_list = range(1)
 
