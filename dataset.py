@@ -4,9 +4,10 @@ import numpy as np
 import os
 from os import listdir
 from os.path import join
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageFilter
 import random
 from random import randrange
+import pdb
 
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in [".png", ".jpg", ".jpeg"])
@@ -41,6 +42,10 @@ def get_patch(img_in, img_tar, img_bic, patch_size, scale, ix=-1, iy=-1):
     img_in = img_in.crop((iy,ix,iy + ip, ix + ip))
     img_tar = img_tar.crop((ty,tx,ty + tp, tx + tp))
     img_bic = img_bic.crop((ty,tx,ty + tp, tx + tp))
+
+    '''img_in.save("/home/ubuntu/efs/data/users/monica/temp/testing/in"+str(ix)+".png")
+    img_tar.save("/home/ubuntu/efs/data/users/monica/temp/testing/tar"+str(ix)+".png")
+    img_bic.save("/home/ubuntu/efs/data/users/monica/temp/testing/bic"+str(ix)+".png")'''
                 
     info_patch = {
         'ix': ix, 'iy': iy, 'ip': ip, 'tx': tx, 'ty': ty, 'tp': tp}
@@ -81,20 +86,25 @@ class DatasetFromFolder(data.Dataset):
 
     def __getitem__(self, index):
         target = load_img(self.image_filenames[index])
-        
-        input = target.resize((int(target.size[0]/self.upscale_factor),int(target.size[1]/self.upscale_factor)), Image.BICUBIC)       
+        rad=np.random.uniform(1.2,2.5)
+        input = target.resize((int(target.size[0]/self.upscale_factor),int(target.size[1]/self.upscale_factor)), Image.BICUBIC).filter(ImageFilter.GaussianBlur(radius = rad))
         bicubic = rescale_img(input, self.upscale_factor)
+
+
+        '''input=input.filter(ImageFilter.GaussianBlur(radius = rad))
+        bicubic = bicubic.filter(ImageFilter.GaussianBlur(radius = rad))'''
         
         input, target, bicubic, _ = get_patch(input,target,bicubic,self.patch_size, self.upscale_factor)
         
         if self.data_augmentation:
             input, target, bicubic, _ = augment(input, target, bicubic)
         
+        
         if self.transform:
             input = self.transform(input)
             bicubic = self.transform(bicubic)
             target = self.transform(target)
-                
+        
         return input, target, bicubic
 
     def __len__(self):
