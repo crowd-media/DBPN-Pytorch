@@ -9,14 +9,16 @@ import random
 from random import randrange
 import pdb
 
+
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in [".png", ".jpg", ".jpeg"])
 
 
 def load_img(filepath):
-    img = Image.open(filepath).convert('RGB')
-    #y, _, _ = img.split()
+    img = Image.open(filepath).convert("RGB")
+    # y, _, _ = img.split()
     return img
+
 
 def rescale_img(img_in, scale):
     size_in = img_in.size
@@ -24,11 +26,12 @@ def rescale_img(img_in, scale):
     img_in = img_in.resize(new_size_in, resample=Image.BICUBIC)
     return img_in
 
+
 def get_patch(img_in, img_tar, img_bic, patch_size, scale, ix=-1, iy=-1):
     (ih, iw) = img_in.size
     (th, tw) = (scale * ih, scale * iw)
 
-    patch_mult = scale #if len(scale) > 1 else 1
+    patch_mult = scale  # if len(scale) > 1 else 1
     tp = patch_mult * patch_size
     ip = tp // scale
 
@@ -39,46 +42,51 @@ def get_patch(img_in, img_tar, img_bic, patch_size, scale, ix=-1, iy=-1):
 
     (tx, ty) = (scale * ix, scale * iy)
 
-    img_in = img_in.crop((iy,ix,iy + ip, ix + ip))
-    img_tar = img_tar.crop((ty,tx,ty + tp, tx + tp))
-    img_bic = img_bic.crop((ty,tx,ty + tp, tx + tp))
+    img_in = img_in.crop((iy, ix, iy + ip, ix + ip))
+    img_tar = img_tar.crop((ty, tx, ty + tp, tx + tp))
+    img_bic = img_bic.crop((ty, tx, ty + tp, tx + tp))
 
-    '''img_in.save("/home/ubuntu/efs/data/users/monica/temp/testing/in"+str(ix)+".png")
+    """img_in.save("/home/ubuntu/efs/data/users/monica/temp/testing/in"+str(ix)+".png")
     img_tar.save("/home/ubuntu/efs/data/users/monica/temp/testing/tar"+str(ix)+".png")
-    img_bic.save("/home/ubuntu/efs/data/users/monica/temp/testing/bic"+str(ix)+".png")'''
-                
-    info_patch = {
-        'ix': ix, 'iy': iy, 'ip': ip, 'tx': tx, 'ty': ty, 'tp': tp}
+    img_bic.save("/home/ubuntu/efs/data/users/monica/temp/testing/bic"+str(ix)+".png")"""
+
+    info_patch = {"ix": ix, "iy": iy, "ip": ip, "tx": tx, "ty": ty, "tp": tp}
 
     return img_in, img_tar, img_bic, info_patch
 
+
 def augment(img_in, img_tar, img_bic, flip_h=True, rot=True):
-    info_aug = {'flip_h': False, 'flip_v': False, 'trans': False}
-    
+    info_aug = {"flip_h": False, "flip_v": False, "trans": False}
+
     if random.random() < 0.5 and flip_h:
         img_in = ImageOps.flip(img_in)
         img_tar = ImageOps.flip(img_tar)
         img_bic = ImageOps.flip(img_bic)
-        info_aug['flip_h'] = True
+        info_aug["flip_h"] = True
 
     if rot:
         if random.random() < 0.5:
             img_in = ImageOps.mirror(img_in)
             img_tar = ImageOps.mirror(img_tar)
             img_bic = ImageOps.mirror(img_bic)
-            info_aug['flip_v'] = True
+            info_aug["flip_v"] = True
         if random.random() < 0.5:
             img_in = img_in.rotate(180)
             img_tar = img_tar.rotate(180)
             img_bic = img_bic.rotate(180)
-            info_aug['trans'] = True
-            
+            info_aug["trans"] = True
+
     return img_in, img_tar, img_bic, info_aug
-    
+
+
 class DatasetFromFolder(data.Dataset):
-    def __init__(self, image_dir, patch_size, upscale_factor, data_augmentation, transform=None):
+    def __init__(
+        self, image_dir, patch_size, upscale_factor, data_augmentation, transform=None
+    ):
         super(DatasetFromFolder, self).__init__()
-        self.image_filenames = [join(image_dir, x) for x in listdir(image_dir) if is_image_file(x)]
+        self.image_filenames = [
+            join(image_dir, x) for x in listdir(image_dir) if is_image_file(x)
+        ]
         self.patch_size = patch_size
         self.upscale_factor = upscale_factor
         self.transform = transform
@@ -86,34 +94,43 @@ class DatasetFromFolder(data.Dataset):
 
     def __getitem__(self, index):
         target = load_img(self.image_filenames[index])
-        rad=np.random.uniform(1.2,2.5)
-        input = target.resize((int(target.size[0]/self.upscale_factor),int(target.size[1]/self.upscale_factor)), Image.BICUBIC).filter(ImageFilter.GaussianBlur(radius = rad))
+        rad = np.random.uniform(1.2, 2.5)
+        input = target.resize(
+            (
+                int(target.size[0] / self.upscale_factor),
+                int(target.size[1] / self.upscale_factor),
+            ),
+            Image.BICUBIC,
+        ).filter(ImageFilter.GaussianBlur(radius=rad))
         bicubic = rescale_img(input, self.upscale_factor)
 
+        """input=input.filter(ImageFilter.GaussianBlur(radius = rad))
+        bicubic = bicubic.filter(ImageFilter.GaussianBlur(radius = rad))"""
 
-        '''input=input.filter(ImageFilter.GaussianBlur(radius = rad))
-        bicubic = bicubic.filter(ImageFilter.GaussianBlur(radius = rad))'''
-        
-        input, target, bicubic, _ = get_patch(input,target,bicubic,self.patch_size, self.upscale_factor)
-        
+        input, target, bicubic, _ = get_patch(
+            input, target, bicubic, self.patch_size, self.upscale_factor
+        )
+
         if self.data_augmentation:
             input, target, bicubic, _ = augment(input, target, bicubic)
-        
-        
+
         if self.transform:
             input = self.transform(input)
             bicubic = self.transform(bicubic)
             target = self.transform(target)
-        
+
         return input, target, bicubic
 
     def __len__(self):
         return len(self.image_filenames)
 
+
 class DatasetFromFolderEval(data.Dataset):
     def __init__(self, lr_dir, upscale_factor, transform=None):
         super(DatasetFromFolderEval, self).__init__()
-        self.image_filenames = [join(lr_dir, x) for x in listdir(lr_dir) if is_image_file(x)]
+        self.image_filenames = [
+            join(lr_dir, x) for x in listdir(lr_dir) if is_image_file(x)
+        ]
         self.upscale_factor = upscale_factor
         self.transform = transform
 
@@ -122,12 +139,12 @@ class DatasetFromFolderEval(data.Dataset):
         _, file = os.path.split(self.image_filenames[index])
 
         bicubic = rescale_img(input, self.upscale_factor)
-        
+
         if self.transform:
             input = self.transform(input)
             bicubic = self.transform(bicubic)
-            
+
         return input, bicubic, file
-      
+
     def __len__(self):
         return len(self.image_filenames)
