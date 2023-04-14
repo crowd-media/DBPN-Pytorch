@@ -63,8 +63,15 @@ def load_model(path, device = "cuda", model_type='DBPNLL', upscale_factor=8,resi
   
         
     if device == "cuda":
-        model = torch.nn.DataParallel(model, device_ids=gpus_list)
-        model.load_state_dict(s)
+        # model = torch.nn.DataParallel(model, device_ids=gpus_list)
+        new_s = {}
+
+        for k, v in s.items():
+            # print(k)
+            new_s[k.replace("module.", "")] = v  
+
+
+        model.load_state_dict(new_s)
     else:
         new_s = {}
 
